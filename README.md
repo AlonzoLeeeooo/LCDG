@@ -1,7 +1,7 @@
 # Late-Constraint Diffusion Guidance for Controllable Image Synthesis
 The official code implementation of "Late-Constraint Diffusion Guidance for Controllable Image Synthesis".
 
-[[Paper]]([github_materials/tissor.jpg](https://arxiv.org/abs/2305.11520)) / [Project (coming soon)]
+[[Paper]]((https://arxiv.org/abs/2305.11520)) / [Project (coming soon)]
 
 # Overview
 ![tissor](github_materials/tissor.jpg)
