@@ -14,6 +14,7 @@ Diffusion models, either with or without text condition, have demonstrated impre
 - Currently we are working on cleaning up the codebase of LCDG. The code implementation of LCDG would be open-sourced ASAP. Afterwards we would provide more implementation of LCDG such as demonstration video, interactive demo on HuggingFace, and so on. Star the project to get notified!
 - [ ] Testing code of LCDG.
 - [ ] Online demo of LCDG.
+- [ ] Pre-trained model weights.
 - [ ] Training code of LCDG.
 
 # Prerequisites
