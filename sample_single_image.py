@@ -47,7 +47,7 @@ def get_parser(**parser_kwargs):
     parser = argparse.ArgumentParser(**parser_kwargs)
     parser.add_argument("-b", "--base", type=str, default="", help="path of config file")
     parser.add_argument("-s", "--seed", type=int, default=23, help="setting seed")
-    parser.add_argument("--indir", type=str, default='', help="input images dir")
+    parser.add_argument("--indir", type=str, default='', help="input condition dir")
     parser.add_argument("--caption", type=str, default='', help="text prefix")
     parser.add_argument("--outdir", type=str, default='workdir/verbose_sampling', help="output dir")
     parser.add_argument("--resume", type=str, help='checkpoint of condition adaptor')
