@@ -48,26 +48,19 @@ def get_parser(**parser_kwargs):
     parser.add_argument("--cond_type", type=str, default='edge', help='type of condition: edge, stroke or saliency')
     parser.add_argument("-b", "--base", type=str, default="condition_adaptor_configs/edge_baseline", help="path of config file")
     parser.add_argument("-s", "--seed", type=int, default=23, help="setting seed")
-    parser.add_argument("--get_files_from_path", action='store_true', help='get data from folder or flist')
     parser.add_argument("--indir", type=str, default='', help="input images dir")
     parser.add_argument("--caption", type=str, default='', help="text prefix")
     parser.add_argument("--outdir", type=str, default='workdir/verbose_sampling', help="output dir")
     parser.add_argument("--resume", type=str, help='checkpoint of condition adaptor')
-    parser.add_argument("--resume_from_single_GPU", action='store_true', help='load single-GPU trained model weights')
-    parser.add_argument("--resume_from_DDP", action='store_true', help='load DDP trained model weights')
     parser.add_argument("--steps", type=int, default=50, help='number of ddim sampling steps')
     parser.add_argument("--cond_scale", type=float, default=2.0, help='scale of condition score')
     parser.add_argument("--unconditional_guidance_scale", type=float, default=9.0, help='scale of unconditional guidance in classifier-free guidance')
     parser.add_argument("--ddim_eta", type=float, default=0.0, help='ddim eta (eta=0.0 corresponds to deterministic sampling')
-    parser.add_argument("--is_binary", action='store_true', help='whether binarize sketches or not')
-    parser.add_argument("--sample_num", type=int, default=10, help='number of samples')
     parser.add_argument("--verbose", action='store_true', help='turn on verbose mode')
     parser.add_argument("--DDP", action='store_true', help='use DDP, to similar to the training setting')
     parser.add_argument("--world_size", type=int, default=1, help='world size')
-    parser.add_argument("--use_l1", action='store_true', help='use L1 loss or MSE loss')
     parser.add_argument("--ddim_sampling", type=bool, default=True, help='use ddim sampling, default by True')
     parser.add_argument("--truncation_steps", type=int, default=500, help='early stop the edge condition while sampling')
-    parser.add_argument("--return_pred_cond", type=bool, default=False, help='return predicted condition for visualization')
     
     # TODO: code to be tuned
     parser.add_argument('--saliency_threshold', default=127.5, type=int, help='threshold of saliency condition for binarizing')
@@ -96,7 +89,7 @@ def get_files_from_txt(path):
 # TODO: function to compute the gradient tensor of condition adaptor
 def cond_fn(x, c, t, cond_configs, blocks_indexes,
             target_cond, model, diffusion_model, 
-            criterion, scale=1.0, return_pred_cond=True):
+            criterion, scale=1.0):
     with torch.enable_grad():
         target_cond = target_cond.requires_grad_(True)
         x = x.requires_grad_(True)
@@ -118,21 +111,7 @@ def cond_fn(x, c, t, cond_configs, blocks_indexes,
         
         grad = torch.autograd.grad(loss, x, allow_unused=True)[0] * scale      # original: loss.sum()
         
-        if return_pred_cond:
-            return grad, x_pred
-        else:
-            return grad
-
-# # TODO: function to compute the gradient tensor of edge aligner
-# def _edge_cond_fn(x, t, target, target_sketch, model, criterion, scale=1.0):
-#     with torch.enable_grad():
-#         target_sketch = target_sketch.requires_grad_(True)
-#         target = target.requires_grad_(True)
-#         x_in = x.requires_grad_(True)
-#         x_pred = model(x_in, t)
-#         loss = torch.log(criterion(target_sketch, x_pred))
-#         grad = torch.autograd.grad(loss.sum(), target)[0] * scale
-#         return grad
+        return grad
 
 if __name__ == "__main__":
 
@@ -142,18 +121,11 @@ if __name__ == "__main__":
     setup_seed(args.seed)
 
     args.inference = True
-    args.is_dual_conditions = False
     os.makedirs(args.outdir, exist_ok=True)
-    
-    if args.inpaint is True:
-        assert args.x0 is not None
-        assert args.mask is not None
     
     # load configurations
     model_configs = OmegaConf.load(args.base)
     configs = {'model_configs': model_configs, 'args': args}
-    
-    args.use_clip_style_loss = True if model_configs['condition_adaptor_config']['cond_type'] == "style" else False
     
     if args.DDP:
         assert "We currently only support single-GPU sampling."
