@@ -63,7 +63,7 @@ def get_parser(**parser_kwargs):
     
     # TODO: code to be tuned
     parser.add_argument('--saliency_threshold', default=127.5, type=int, help='threshold of saliency condition for binarizing')
-    parser.add_argument('--added_prompt', default="best quality, extremely detailed", help='active prompts')
+    parser.add_argument('--added_prompt', default="", help='positive prompts, deprecated')
     parser.add_argument('--negative_prompt', default="longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, ugly, boring, bad anatomy, blurry, pixelated, trees, green, obscure, unnatural colors, poor lighting, dull, and unclear",
                         help="negative prompt, other options: ``ugly, boring, bad anatomy, blurry, pixelated, trees, green, obscure, unnatural colors, poor lighting, dull, and unclear''")
     parser.add_argument('--height', default=512, type=int, help='image height')
