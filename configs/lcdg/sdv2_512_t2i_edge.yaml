@@ -2,7 +2,7 @@ model:
   base_learning_rate: 1.0e-4
   target: ldm.models.diffusion.ddpm.LatentDiffusion
   params:
-    ckpt_path: /mnt/g/checkpoints/v2-1_512-ema-pruned.ckpt
+    ckpt_path: /path/to/diffusion/model
     linear_start: 0.00085
     linear_end: 0.0120
     num_timesteps_cond: 1
@@ -40,7 +40,7 @@ model:
     first_stage_config:
       target: ldm.models.autoencoder.AutoencoderKL
       params:
-        ckpt_path: /mnt/g/checkpoints/kl-f8.ckpt
+        ckpt_path: /path/to/vector/quantized/model
         embed_dim: 4
         monitor: val/rec_loss
         ddconfig:
@@ -67,7 +67,6 @@ model:
       params:
         freeze: True
         layer: "penultimate"
-        pretrained: /mnt/g/checkpoints/clip/open_clip_pytorch_model.bin
 
 condition_adaptor_config:
   mode: from_text
