@@ -45,7 +45,6 @@ def get_parser(**parser_kwargs):
             raise argparse.ArgumentTypeError("Boolean value expected.")
 
     parser = argparse.ArgumentParser(**parser_kwargs)
-    parser.add_argument("--cond_type", type=str, default='edge', help='type of condition: edge, stroke or saliency')
     parser.add_argument("-b", "--base", type=str, default="condition_adaptor_configs/edge_baseline", help="path of config file")
     parser.add_argument("-s", "--seed", type=int, default=23, help="setting seed")
     parser.add_argument("--indir", type=str, default='', help="input images dir")
