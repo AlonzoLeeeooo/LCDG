@@ -67,7 +67,6 @@ model:
       params:
         freeze: True
         layer: "penultimate"
-        pretrained: /path/to/open/clip/model
 
 condition_adaptor_config:
   mode: from_text
