@@ -11,11 +11,11 @@ The official code implementation of "Late-Constraint Diffusion Guidance for Cont
 Diffusion models, either with or without text condition, have demonstrated impressive capability in synthesizing photorealistic images given a few or even no words. These models may not fully satisfy user need, as normal users or artists intend to control the synthesized images with specific guidance, like overall layout, color, structure, object shape, and so on. To adapt diffusion models for controllable image synthesis, several methods have been proposed to incorporate the required conditions as regularization upon the intermediate features of the diffusion denoising network. These methods, known as early-constraint ones in this paper, have difficulties in handling multiple conditions with a single solution. They intend to train separate models for each specific condition, which require much training cost and result in non-generalizable solutions. To address these difficulties, we propose a new approach namely late-constraint: we leave the diffusion networks unchanged, but constrain its output to be aligned with the required conditions. Specifically, we train a lightweight condition adapter to establish the correlation between external conditions and internal representations of diffusion models. During the iterative denoising process, the conditional guidance is sent into corresponding condition adapter to manipulate the sampling process with the established correlation. We further equip the introduced late-constraint strategy with a timestep resampling method and an early stopping technique, which boost the quality of synthesized image meanwhile complying with the guidance. Our method outperforms the existing early-constraint methods and generalizes better to unseen condition.
 
 # To-Do Lists
-- [x] Official instructions of installation and usage of LCDG.
-- [x] Testing code of LCDG.
 - [ ] Online demo of LCDG.
 - [ ] Pre-trained model weights.
+- [x] Official instructions of installation and usage of LCDG.
 - [x] Training code of LCDG.
+- [x] Testing code of LCDG.
 
 # Prerequisites
 We integrate the basic environment to run both of the training and testing code in `environment.sh` using `pip` as package manager. Simply running `bash environment.sh` would get the required packages installed.
@@ -64,35 +64,41 @@ python sample_single_image.py
 ```
 
 # Qualitative Comparison
-## Canny Edge
+<details><summary>Canny Edge</summary>
 <div align="center">
 <img src="github_materials/canny_edge.jpg">
 </div>
+</details>
 
-## HED Edge
+<details><summary>HED Edge</summary>
 <div align="center">
 <img src="github_materials/hed_edge.jpg">
 </div>
+</details>
 
-## User Sketch
+<details><summary>User Sketch</summary>
 <div align="center">
 <img src="github_materials/user_sketch.jpg">
 </div>
+</details>
 
-## Color Storke
+<details><summary>Color Storke</summary>
 <div align="center">
 <img src="github_materials/color_stroke.jpg">
 </div>
+</details>
 
-## Image Palette
+<details><summary>Image Palette</summary>
 <div align="center">
 <img src="github_materials/image_palette.jpg">
 </div>
+</details>
 
-## Mask
+<details><summary>Mask</summary>
 <div align="center">
 <img src="github_materials/mask.jpg">
 </div>
+</details>
 
 # License
 This work is licensed under MIT license. See the [LICENSE](LICENSE) for details.
@@ -109,3 +115,9 @@ If you find our work enlightening or the codebase is helpful to your work, pleas
     primaryClass={cs.CV}
 }
 ```
+# Acknowledgements
+This codebase is heavily built upon the source code of [Stable Diffusion](https://github.com/CompVis/stable-diffusion). Thanks to their great implementations!
+
+
+
+
