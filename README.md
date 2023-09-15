@@ -64,6 +64,7 @@ python sample_single_image.py
 ```
 
 # Qualitative Comparison
+We demonstrate the qualitative comparisons upon different conditions in the following figures.
 <details><summary>Canny Edge</summary>
 <div align="center">
 <img src="github_materials/canny_edge.jpg">
