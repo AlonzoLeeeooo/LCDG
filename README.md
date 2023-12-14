@@ -1,4 +1,5 @@
-# Late-Constraint Diffusion Guidance for Controllable Image Synthesis
+<p align="center">
+  <h1 align="center">Late-Constraint Diffusion Guidance for Controllable Image Synthesis</h1>
 The official code implementation of "Late-Constraint Diffusion Guidance for Controllable Image Synthesis".
 
 [[Paper]]([github_materials/tissor.jpg](https://arxiv.org/abs/2305.11520)) / [[Project]](https://alonzoleeeooo.github.io/LCDG/) / [Model Weights] / [Demo]
