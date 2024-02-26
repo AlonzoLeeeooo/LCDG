@@ -120,6 +120,7 @@ If you find our work enlightening or the codebase is helpful to your work, pleas
 # Acknowledgements
 This codebase is heavily built upon the source code of [Stable Diffusion](https://github.com/CompVis/stable-diffusion). Thanks to their great implementations!
 
+# Stars and Forked
+[![Stargazers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/stars/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/stargazers)
 
-
-
+[![Forkers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/forks/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/network/members)
