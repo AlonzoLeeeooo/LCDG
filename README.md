@@ -124,3 +124,10 @@ This codebase is heavily built upon the source code of [Stable Diffusion](https:
 [![Stargazers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/stars/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/stargazers)
 
 [![Forkers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/forks/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/network/members)
+
+
+<p align="center">
+    <a href="https://api.star-history.com/svg?repos=AlonzoLeeeooo/LCDG&type=Date" target="_blank">
+        <img width="500" src="https://api.star-history.com/svg?repos=AlonzoLeeeooo/LCDG&type=Date" alt="Star History Chart">
+    </a>
+<p>
