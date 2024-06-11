@@ -9,7 +9,7 @@ The official code implementation of "Late-Constraint Diffusion Guidance for Cont
 
 # To-Do Lists
 🔥 We are working on extending our work to broader application scenarios, e.g., other diffusion checkpoints or architectures. This GitHub repo will be heavily updated as soon as our work is ready. **Star the project to get notified! 🌟** There are some TODOs:
-  - [ ] Upload a newer version of paper to arXiv
+  - [x] Upload a newer version of paper to arXiv
   - [ ] Update the codebase
   - [ ] Update the repo document
   - [ ] Update a HuggingFace demo
