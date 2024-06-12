@@ -87,8 +87,8 @@ By changing `--size`, you can control the image size of Bicubic down-sampled res
 
 <!-- omit in toc -->
 # Generate Saliency Mask
-1. Download the model weights of [BDCN edge extractor](https://github.com/pkuCactus/BDCN) from [this link](https://huggingface.co/AlonzoLeeeooo/LaCon/tree/main), and place the weights in `u2net-saliency-detection/checkpoints`.
-Execute the following command line to extract saliency masks from images in a folder:
+1. Download the model weights of [U$^2$-Net](https://github.com/xuebinqin/U-2-Net) from [this link](https://huggingface.co/AlonzoLeeeooo/LaCon/tree/main), and place the weights in `u2net-saliency-detection/checkpoints`.
+2. Execute the following command line to extract saliency masks from images in a folder:
 ```bash
 python data-preprocessing/u2net-saliency-detection/generate-saliency-mask.py --indir IMAGE_PATH --outdir OUTPUT_PATH
 ```

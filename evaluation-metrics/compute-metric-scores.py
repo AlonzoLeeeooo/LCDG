@@ -130,8 +130,6 @@ if __name__ == "__main__":
     parser.add_argument("--sd_version", default="1.4", type=str, help='stable diffusion version')
     parser.add_argument("--outdir", default=None, required=True, type=str, help='path to store the txt files')
     parser.add_argument('--size', default=512, type=int, help='size of source images and generated samples')
-    parser.add_argument("--use_torchmetrics", type=bool, default=False, help='use implementations of torchmetrics to calculate CLIP score')
-    parser.add_argument("--not_calculate_fid", action='store_true', help='calculate FID score')
     args = parser.parse_args()
     
     os.makedirs(args.outdir, exist_ok=True)
@@ -156,7 +154,6 @@ if __name__ == "__main__":
         print('\nStart calculating CLIP score...\n')
         
         for path in sample_paths:
-            print(experimental_setting)
             count += 1
             print(f"Progress: {count}/{len(sample_paths)}")
             
@@ -188,7 +185,8 @@ if __name__ == "__main__":
         
         # write the calculated CLIP score
         txt = open(os.path.join(args.outdir, 'scores.txt'), "w")
-        write_content = f"FID score: {fid_score}\nCLIP score: {avg_clip_score}" if not args.not_calculate_fid else f"Experimental Setting: {experimental_setting}.\nAverage CLIP score: {avg_clip_score}"
+        write_content = f"FID score: {fid_score}\nCLIP score: {avg_clip_score}"
+        print(write_content)
         txt.write(write_content)
         txt.close()
         

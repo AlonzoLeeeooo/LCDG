@@ -84,8 +84,8 @@ data/
 ```
 
 
-1. Once the training data is ready, you need to modify the configuration files following [this document](configs/README.md).
-2. Now you are ready to go by executing the following command line:
+2. Once the training data is ready, you need to modify the configuration files following [this document](configs/README.md).
+3. Now you are ready to go by executing the following command line:
 ```bash
 python condition-aligner-train.py -b CONFIG_PATH -l OUTPUT_PATH
 ```
