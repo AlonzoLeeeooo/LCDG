@@ -19,9 +19,11 @@ Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
 - [<u>8. Citation</u>](#citation)
 - [<u>9. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
 
+If you have any questions about this work, please feel free to [start a new issue](https://github.com/AlonzoLeeeooo/LCDG/issues/new) or [propose a PR](https://github.com/AlonzoLeeeooo/LCDG/pulls).
+
 <!-- omit in toc -->
 # News
-- [Jun. 11th] We have updated the training and sampling code of LaCon.
+- [Jun. 12th] We have updated the training and sampling code of LaCon.
 
 <!-- omit in toc -->
 # To-Do Lists
