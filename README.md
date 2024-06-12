@@ -15,7 +15,7 @@ Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
 - [<u>4. Prerequisites</u>](#prerequisites)
 - [<u>5. Training of Condition Aligner</u>](#training-of-condition-aligner)
 - [<u>6. Sampling with Condition Aligner</u>](#sampling-with-condition-aligner)
-- [<u>7. Evaluation</u>](#sampling-with-condition-aligner)
+- [<u>7. Evaluation</u>](#evaluation)
 - [<u>8. Citation</u>](#citation)
 - [<u>9. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
 
