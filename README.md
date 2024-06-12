@@ -4,7 +4,7 @@
 
 Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
 
-[[`Paper`]](https://arxiv.org/pdf/2305.11520) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Model Weights`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [`Demo`]
+[[`Paper`]](https://arxiv.org/pdf/2305.11520) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Huggingface`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [[`ModelScope`]](https://modelscope.cn/models/AlonzoLeeeoooo/LaCon) / [`Demo`]
 </div>
 
 <!-- omit in toc -->
@@ -23,14 +23,14 @@ If you have any questions about this work, please feel free to [start a new issu
 
 <!-- omit in toc -->
 # News
-- [Jun. 12th] We have updated the training and sampling code of LaCon.
+- [Jun. 12th] We have updated the training and sampling code of LaCon. Pre-trained model weights are currently available at our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon/tree/main) and [ModelScope repo](https://modelscope.cn/models/AlonzoLeeeoooo/LaCon).
 
 <!-- omit in toc -->
 # To-Do Lists
   - [x] Upload a newer version of paper to arXiv
   - [x] Update the codebase
   - [x] Update the repo document
-  - [ ] Upload the pre-trained model weights of LaCon based on Celeb and Stable Diffusion v1.4
+  - [x] Upload the pre-trained model weights of LaCon based on Celeb and Stable Diffusion v1.4
   - [ ] Update the pre-trained model weights of LaCon based on Stable Diffusion v2.1
   - [ ] Update implementation for local Gradio demo
   - [ ] Update online HuggingFace demo
