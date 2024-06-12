@@ -4,7 +4,7 @@
 
 Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
 
-[[`Paper`]]((https://arxiv.org/pdf/2305.11520)) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Model Weights`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [`Demo`]
+[[`Paper`]](https://arxiv.org/pdf/2305.11520) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Model Weights`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [`Demo`]
 </div>
 
 <!-- omit in toc -->
