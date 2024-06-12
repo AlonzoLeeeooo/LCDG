@@ -22,10 +22,10 @@ We use the following toolkits to perform data pre-processing of LaCon:
 |Condition|Script|Model Weights|
 |---|---|---|
 |Canny Edge|`generate-canny.py`|-|
-|HED Edge|`bdcn-edge-detection/generate-bdcn-edge.py`|`toolkits/bdcn.pth`|
+|HED Edge|`bdcn-edge-detection/generate-bdcn-edge.py`|`data-preprocessing/bdcn.pth`|
 |Color Stroke|`generate-stroke.pth`|-|
 |Image Palette|`generate-palette.py`|-|
-|Saliency Mask|`u2net-saliency-detection/generate-saliency-mask.py`|`toolkits/u2net.pth`|
+|Saliency Mask|`u2net-saliency-detection/generate-saliency-mask.py`|`data-preprocessing/u2net.pth`|
 
 Before you start data pre-processing with the above toolkits, please download the toolkit model weights from our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon) and place them in `bdcn-edge-detection/checkpoints` and `u2net-saliency-detection/checkpoints`.
 
