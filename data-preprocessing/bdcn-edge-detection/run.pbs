@@ -1,0 +1,18 @@
+#PBS -N bdcn_edge_detection
+#PBS -o /gdata1/liuchang/test/bdcn.out
+#PBS -e /gdata1/liuchang/test/bdcn.err
+#PBS -l nodes=1:gpus=1:S,walltime=300000:00:00
+#PBS -r y
+#PBS -m abef
+cd $PBS_O_WORKDIR
+echo Time is 'date'
+echo Directory is $PWD
+echo This job runs on following nodes:
+echo -n "Node:"
+cat $PBS_NODEFILE
+echo -n "Gpus:"
+cat $PBS_GPUFILE
+echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
+
+startdocker -P /ghome/liuchang -D /gdata/liuchang -u"-v /gdata1:/gdata1 -v /gpub:/gpub -e PYTHONPATH=/ghome/liuchang/pylib --ipc=host" -c "python /ghome/liuchang/image_inpainting/BDCN/test_image.py -c -m /gdata/liuchang/checkpoints/bdcn-final-model/bdcn_pretrained_on_bsds500.pth --res_dir /gdata/liuchang/imagenet-1k/train/sketches --data_root /gdata/liuchang/imagenet-1k/train/flists/foreground_flist.txt"  bit:5000/liuchang_torch1.8_cuda10.2_blobfile_mpi4py
+

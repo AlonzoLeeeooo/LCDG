@@ -1,127 +1,196 @@
-<p align="center">
-  <h1 align="center">Late-Constraint Diffusion Guidance for Controllable Image Synthesis</h1>
-The official code implementation of "Late-Constraint Diffusion Guidance for Controllable Image Synthesis".
+<div align="center">
 
-[[Paper]]([github_materials/tissor.jpg](https://arxiv.org/abs/2305.11520)) / [[Project]](https://alonzoleeeooo.github.io/LCDG/) / [Model Weights] / [Demo]
+# LaCon: Late-Constraint Diffusion for Steerable Guided Image Synthesis
 
+Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
+
+[[`Paper`]]((https://arxiv.org/pdf/2305.11520)) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Model Weights`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [`Demo`]
+</div>
+
+<!-- omit in toc -->
+# Table of Contents
+- [<u>1. News</u>](#news)
+- [<u>2. To-Do Lists</u>](#to-do-lists)
+- [<u>3. Overview of LaCon</u>](#overview-of-lacon)
+- [<u>4. Prerequisites</u>](#prerequisites)
+- [<u>5. Training of Condition Aligner</u>](#training-of-condition-aligner)
+- [<u>6. Sampling with Condition Aligner</u>](#sampling-with-condition-aligner)
+- [<u>7. Evaluation</u>](#sampling-with-condition-aligner)
+- [<u>8. Citation</u>](#citation)
+- [<u>9. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
+
+<!-- omit in toc -->
 # News
-- We have uploaded the training and testing code of LCDG. Afterwards, we would also release our pre-trained model weights as well as an interactive demo. **Star the project to get notified!**
+- [Jun. 11th] We have updated the training and sampling code of LaCon.
 
+<!-- omit in toc -->
 # To-Do Lists
-🔥 We are working on extending our work to broader application scenarios, e.g., other diffusion checkpoints or architectures. This GitHub repo will be heavily updated as soon as our work is ready. **Star the project to get notified! 🌟** There are some TODOs:
   - [x] Upload a newer version of paper to arXiv
-  - [ ] Update the codebase
-  - [ ] Update the repo document
-  - [ ] Update a HuggingFace demo
+  - [x] Update the codebase
+  - [x] Update the repo document
+  - [ ] Upload the pre-trained model weights of LaCon based on Celeb and Stable Diffusion v1.4
+  - [ ] Update the pre-trained model weights of LaCon based on Stable Diffusion v2.1
+  - [ ] Update implementation for local Gradio demo
+  - [ ] Update online HuggingFace demo
 
-# Overview
-![tissor](github_materials/tissor.jpg)
-Diffusion models, either with or without text condition, have demonstrated impressive capability in synthesizing photorealistic images given a few or even no words. These models may not fully satisfy user need, as normal users or artists intend to control the synthesized images with specific guidance, like overall layout, color, structure, object shape, and so on. To adapt diffusion models for controllable image synthesis, several methods have been proposed to incorporate the required conditions as regularization upon the intermediate features of the diffusion denoising network. These methods, known as early-constraint ones in this paper, have difficulties in handling multiple conditions with a single solution. They intend to train separate models for each specific condition, which require much training cost and result in non-generalizable solutions. To address these difficulties, we propose a new approach namely late-constraint: we leave the diffusion networks unchanged, but constrain its output to be aligned with the required conditions. Specifically, we train a lightweight condition adapter to establish the correlation between external conditions and internal representations of diffusion models. During the iterative denoising process, the conditional guidance is sent into corresponding condition adapter to manipulate the sampling process with the established correlation. We further equip the introduced late-constraint strategy with a timestep resampling method and an early stopping technique, which boost the quality of synthesized image meanwhile complying with the guidance. Our method outperforms the existing early-constraint methods and generalizes better to unseen condition.
+<!-- omit in toc -->
+# Overview of LaCon
+![tissor](github-materials/teasor.png)
+> Diffusion models have demonstrated impressive abilities in generating photo-realistic and creative images. To offer more controllability for the generation process, existing studies, termed as early-constraint methods in this paper, leverage extra conditions and incorporate them into pre-trained diffusion models. Particularly, some of them adopt condition-specific modules to handle conditions separately, where they struggle to generalize across other conditions. Although follow-up studies present unified solutions to solve the generalization problem, they also require extra resources to implement, e.g., additional inputs or parameter optimization, where more flexible and efficient solutions are expected to perform steerable guided image synthesis. In this paper, we present an alternative paradigm, namely Late-Constraint Diffusion (LaCon), to simultaneously integrate various conditions into pre-trained diffusion models. Specifically, LaCon establishes an alignment between the external condition and the internal features of diffusion models, and utilizes the alignment to incorporate the target condition, guiding the sampling process to produce tailored results. Experimental results on COCO dataset illustrate the effectiveness and superior generalization capability of LaCon under various conditions and settings. Ablation studies investigate the functionalities of different components in LaCon, and illustrate its great potential to serve as an efficient solution to offer flexible controllability for diffusion models.
+> 
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
 
 
+<!-- omit in toc -->
 # Prerequisites
-We integrate the basic environment to run both of the training and testing code in `environment.sh` using `pip` as package manager. Simply running `bash environment.sh` would get the required packages installed.
-
-# Before Training or Testing
-## 1. Prepare Pre-trained Model Weights of Stable Diffusion
-Before running the code, pre-trained model weights of the diffusion models and corresponding VQ models should be prepared locally. For `v1.4` or `CelebA` model weights, you could refer to the GitHub repository of [Stable Diffusion](https://github.com/CompVis/stable-diffusion), and excute their provided scripts to download by running:
+1. To install the virtual environment of LaCon, you can execute the following command lines:
 ```bash
-bash scripts/download_first_stage.sh
-bash scripts/download_models.sh
+conda create -n lacon
+conda activate lacon
+pip install torch==2.0.0 torchvision==0.15.1
+bash install.sh
 ```
-## 2. Modify the Configuration Files
-We provide example configuration files of edge, color and mask conditions in `configs/lcdg`. Modify `line 5 and line 43` in these configuration files with the corresponding paths of pre-trained model weights.
 
-# Training the Condition Adapter
-## 1. Prepare Your Training Data
-As is reported in our [paper](https://arxiv.org/abs/2305.11520), our condition adapter could be well-trained with 10,000 randomly collected images. You could formulate your data directory in the following structure:
+2. To prepare the pre-trained model weights of different components in `Stable Diffusion` as well as our condition aligner, please download the model weights from our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon) and put them in `./checkpoints`. Once the weights are downloaded, modify the configuration files in `./configs`. Check [this document](configs/README.md) for more details of modifying configuration files.
+**We strongly recommend you to download [the whole Huggingface repo of CLIP](https://huggingface.co/openai/clip-vit-large-patch14) locally, in order to avoid the network issue of Huggingface.**
+
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+
+
+<!-- omit in toc -->
+# Training of Condition Aligner
+1. We use a subset of the training set [COCO](https://cocodataset.org/) with approximate 10,000 data samples. To train the condition aligner, you need to follow the instructions in [this document](data-preprocessing/README.md) and construct the data in the following structure:
 ```bash
-collected_dataset/
-├── bdcn_edges
-├── captions
+data/
+└── bdcn-edges
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── saliency-masks
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── color-strokes
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── coco-captions
+    ├── 1.txt
+    ├── 2.txt
+    ├── ...
 └── images
 ```
-For `edge` condition, we use [bdcn](https://github.com/pkuCactus/BDCN) to generate the supervision signals from source images. For `mask` condition, we use [u2net](https://github.com/xuebinqin/U-2-Net) to detect saliency masks as supervision. For `color` condition, we use simulated color stroke as supervision and have incorparated corresponding code in `condition_adaptor_src/condition_adaptor_dataset.py`.
 
-## 2. Modify the Configuration Files
-After the training data is ready, you need to modify `line 74 to 76` with the corresponding paths of the training data. Additionally, if evaluation is required, you need to modify `line 77 to 79` with corresponding paths of the splitted validation data.
 
-## 3. Starting Training
-Now you are ready to go by executing `condition_adaptor_train.py`, such as:
+1. Once the training data is ready, you need to modify the configuration files following [this document](configs/README.md).
+2. Now you are ready to go by executing the following command line:
 ```bash
-python condition_adaptor_train.py
-    -b /path/to/config/file
-    -l /path/to/output/path
+python condition-aligner-train.py -b CONFIG_PATH -l OUTPUT_PATH
+```
+You can refer to this example command line:
+```bash
+python condition-aligner-train.py -b configs/sd-edge.yaml -l outputs/training/sd-edge
 ```
 
-# Inferencing with Trained Condition Adapter
-After hours of training, you could try sampling images with the trained condition adapter. We provide an example execution command as follows:
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+
+
+<!-- omit in toc -->
+# Sampling with Condition Aligner
+Execute the following command line to generate an image with the trained condition aligner:
 ```bash
-python sample_single_image.py
-    --base /path/to/config/path
-    --indir /path/to/target/condition
-    --caption "text prompt"
-    --outdir /path/to/output/path
-    --resume /path/to/condition/adapter/weights
+python generate-single-image.py --cond_type COND_TYPE --indir CONDITION_PATH --resume CONDITION_ALIGNER_PATH --caption TEXT_PROMPT --cond_scale CONTROLLING_SCALE --unconditional_guidance_scale CLASSIFIER_FREE_GUIDANCE_SCALE  --outdir OUTPUT_PATH -b CONFIG_PATH --seed SEED --truncation_steps TRUNCATION_STEPS --use_neg_prompt
+```
+You can refer to this example command line:
+```bash
+python generate-single-image.py --cond_type mask --indir examples/horse.png --resume checkpoints/sdv14_mask.pth --caption "a horse standing in the moon surface" --cond_scale 2.0 --unconditional_guidance_scale 6.0  --outdir outputs/ -b configs/sd-mask.yaml --seed 23 --truncation_steps 600 --use_neg_prompt
+```
+We suggest the following settings to achieve the optimal performance for various conditions:
+
+|Condition|Setting|Model Weight|Controlling Scale|Truncation Steps|
+|---|---|---|---|---|
+|Canny Edge|Unconditional Generation|`sd_celeb_edge.pth`|2.0|500|
+|HED Edge|Unconditional Generation|`sd_celeb_edge.pth`|2.0|500|
+|User Sketch|Unconditional Generation|`sd_celeb_edge.pth`|2.0|600|
+|Color Stroke|Unconditional Generation|`sd_celeb_color.pth`|2.0|600|
+|Image Palette|Unconditional Generation|`sd_celeb_color.pth`|2.0|800|
+|Canny Edge|T2I Generation|`sdv14_edge.pth`|2.0|500|
+|HED Edge|T2I Generation|`sdv14_edge.pth`|2.5|500|
+|User Sketch|T2I Generation|`sdv14_edge.pth`|2.0|600|
+|Color Stroke|T2I Generation|`sdv14_color.pth`|2.0|600|
+|Image Palette|T2I Generation|`sdv14_color.pth`|2.0|800|
+|Saliency Mask|T2I Generation|`sdv14_mask.pth`|2.0|600|
+|User Scribble|T2I Generation|`sdv14_mask.pth`|2.0|700|
+
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+
+
+<!-- omit in toc -->
+# Evaluation
+Prepare the test set following the data structure below:
+```bash
+data/
+└── bdcn-edges
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── saliency-masks
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── color-strokes
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── image-palette
+    ├── 1.png
+    ├── 2.png
+    ├── ...
+└── coco-captions
+    ├── 1.txt
+    ├── 2.txt
+    ├── ...
+└── images
 ```
 
-# Qualitative Comparison
-We demonstrate the qualitative comparisons upon different conditions in the following figures.
-<details><summary>Canny Edge</summary>
-<div align="center">
-<img src="github_materials/canny_edge.jpg">
-</div>
-</details>
+Execute the following command line to test all data samples in the test set:
+```bash
+python generate-batch-image.py -b CONFIG_PATH --indir DATA_FILELIST_PATH --text CAPTION_PATH --target_cond CONDITION_PATH --resume CONDITION_ALIGNER_PATH --cond_scale CONTROLLING_SCALE --truncation_steps TRUNCATION_STEPS
+```
+You can refer to this example command line:
+```bash
+python generate-batch-image.py -b configs/sd-mask.yaml --indir data/coco2017val/data_flist.txt --text data/coco2017val/coco-captions --target_cond data/coco2017val/saliency-masks --resume checkpoints/sdv14_mask.pth --cond_scale 2.0 --truncation_steps 600
+```
+To compute evaluation metrics (e.g., FID and CLIP scores), please refer to [this document](evaluation-metrics/README.md) for more details. We report the performance of LaCon on [COCO 2017 validation set](https://cocodataset.org/#download) in the following table:
+|Condition|Model Weight|FID|CLIP Score|
+|---|---|---|---|
+|HED Edge|`sdv14_edge.pth`|21.02|0.2590|
+|Color Stroke|`sdv14_color.pth`|20.27|0.2589|
+|Image Palette|`sdv14_color.pth`|20.61|0.2580|
+|Saliency Mask|`sdv14_mask.pth`|20.94|0.2617|
 
-<details><summary>HED Edge</summary>
-<div align="center">
-<img src="github_materials/hed_edge.jpg">
-</div>
-</details>
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
 
-<details><summary>User Sketch</summary>
-<div align="center">
-<img src="github_materials/user_sketch.jpg">
-</div>
-</details>
 
-<details><summary>Color Storke</summary>
-<div align="center">
-<img src="github_materials/color_stroke.jpg">
-</div>
-</details>
-
-<details><summary>Image Palette</summary>
-<div align="center">
-<img src="github_materials/image_palette.jpg">
-</div>
-</details>
-
-<details><summary>Mask</summary>
-<div align="center">
-<img src="github_materials/mask.jpg">
-</div>
-</details>
-
-# License
-This work is licensed under MIT license. See the [LICENSE](LICENSE) for details.
-
+<!-- omit in toc -->
 # Citation
-If you find our work enlightening or the codebase is helpful to your work, please cite our paper:
+If you find our paper helpful to your work, please cite our paper with the following BibTeX reference:
 ```bibtex
-@misc{liu2023lateconstraint,
-    title={Late-Constraint Diffusion Guidance for Controllable Image Synthesis}, 
-    author={Chang Liu and Dong Liu},
-    year={2023},
-    eprint={2305.11520},
-    archivePrefix={arXiv},
-    primaryClass={cs.CV}
+@misc{liu-etal-2024-lacon,
+      title={{LaCon: Late-Constraint Diffusion for Steerable Guided Image Synthesis}}, 
+      author={{Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, and Dong Liu}},
+      year={2024},
+      eprint={2305.11520},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
 }
 ```
-# Acknowledgements
-This codebase is heavily built upon the source code of [Stable Diffusion](https://github.com/CompVis/stable-diffusion). Thanks to their great implementations!
 
-# Stars and Forked
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+
+
+<!-- omit in toc -->
+# Stars, Forked, and Star History
 [![Stargazers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/stars/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/stargazers)
 
 [![Forkers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/forks/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/network/members)
@@ -132,3 +201,5 @@ This codebase is heavily built upon the source code of [Stable Diffusion](https:
         <img width="500" src="https://api.star-history.com/svg?repos=AlonzoLeeeooo/LCDG&type=Date" alt="Star History Chart">
     </a>
 <p>
+
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)

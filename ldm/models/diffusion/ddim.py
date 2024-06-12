@@ -1,24 +1,27 @@
 """SAMPLING ONLY."""
 
+import sys
 import torch
+import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
+from functools import partial
 
-from ldm.modules.diffusionmodules.util import make_ddim_sampling_parameters, make_ddim_timesteps, noise_like, extract_into_tensor
+from ldm.modules.diffusionmodules.util import make_ddim_sampling_parameters, make_ddim_timesteps, noise_like, \
+    extract_into_tensor
 
 
 class DDIMSampler(object):
-    def __init__(self, model, schedule="linear", device=torch.device("cuda"), **kwargs):
+    def __init__(self, model, schedule="linear", **kwargs):
         super().__init__()
         self.model = model
         self.ddpm_num_timesteps = model.num_timesteps
         self.schedule = schedule
-        self.device = device
 
     def register_buffer(self, name, attr):
         if type(attr) == torch.Tensor:
-            if attr.device != self.device:
-                attr = attr.to(self.device)
+            if attr.device != torch.device("cuda"):
+                attr = attr.to(torch.device("cuda"))
         setattr(self, name, attr)
 
     def make_schedule(self, ddim_num_steps, ddim_discretize="uniform", ddim_eta=0., verbose=True):
@@ -73,11 +76,7 @@ class DDIMSampler(object):
                x_T=None,
                log_every_t=100,
                unconditional_guidance_scale=1.,
-               unconditional_conditioning=None, # this has to come in the same format as the conditioning, # e.g. as encoded tokens, ...
-               dynamic_threshold=None,
-               ucg_schedule=None,
-               
-               # TODO: configurations of condition adaptor
+               unconditional_conditioning=None,
                target_cond=None,
                cond_fn=None,
                cond_model=None,
@@ -85,23 +84,17 @@ class DDIMSampler(object):
                cond_configs=None,
                cond_criterion=None,
                cond_scale=None,
+               add_cond_score=None,
                truncation_steps=None,
                return_pred_cond=None,
+               # this has to come in the same format as the conditioning, # e.g. as encoded tokens, ...
                **kwargs
                ):
         if conditioning is not None:
             if isinstance(conditioning, dict):
-                ctmp = conditioning[list(conditioning.keys())[0]]
-                while isinstance(ctmp, list): ctmp = ctmp[0]
-                cbs = ctmp.shape[0]
+                cbs = conditioning[list(conditioning.keys())[0]].shape[0]
                 if cbs != batch_size:
                     print(f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
-
-            elif isinstance(conditioning, list):
-                for ctmp in conditioning:
-                    if ctmp.shape[0] != batch_size:
-                        print(f"Warning: Got {cbs} conditionings but batch-size is {batch_size}")
-
             else:
                 if conditioning.shape[0] != batch_size:
                     print(f"Warning: Got {conditioning.shape[0]} conditionings but batch-size is {batch_size}")
@@ -113,31 +106,29 @@ class DDIMSampler(object):
         print(f'Data shape for DDIM sampling is {size}, eta {eta}')
 
         outputs = self.ddim_sampling(conditioning, size,
-                                                    callback=callback,
-                                                    img_callback=img_callback,
-                                                    quantize_denoised=quantize_x0,
-                                                    mask=mask, x0=x0,
-                                                    ddim_use_original_steps=False,
-                                                    noise_dropout=noise_dropout,
-                                                    temperature=temperature,
-                                                    score_corrector=score_corrector,
-                                                    corrector_kwargs=corrector_kwargs,
-                                                    x_T=x_T,
-                                                    log_every_t=log_every_t,
-                                                    unconditional_guidance_scale=unconditional_guidance_scale,
-                                                    unconditional_conditioning=unconditional_conditioning,
-                                                    dynamic_threshold=dynamic_threshold,
-                                                    ucg_schedule=ucg_schedule,
-                                                    
-                                                    # TODO: configurations of condition adaptor
-                                                    target_cond=target_cond,
-                                                    cond_fn=cond_fn,
-                                                    cond_model=cond_model,
-                                                    blocks_indexes=blocks_indexes,
-                                                    cond_configs=cond_configs,
-                                                    cond_criterion=cond_criterion,
-                                                    cond_scale=cond_scale,
-                                                    truncation_steps=truncation_steps,
+                                    callback=callback,
+                                    img_callback=img_callback,
+                                    quantize_denoised=quantize_x0,
+                                    mask=mask, x0=x0,
+                                    ddim_use_original_steps=False,
+                                    noise_dropout=noise_dropout,
+                                    temperature=temperature,
+                                    score_corrector=score_corrector,
+                                    corrector_kwargs=corrector_kwargs,
+                                    x_T=x_T,
+                                    log_every_t=log_every_t,
+                                    unconditional_guidance_scale=unconditional_guidance_scale,
+                                    unconditional_conditioning=unconditional_conditioning,
+                                    target_cond=target_cond,
+                                    cond_fn=cond_fn,
+                                    cond_model=cond_model,
+                                    blocks_indexes=blocks_indexes,
+                                    cond_configs=cond_configs,
+                                    cond_criterion=cond_criterion,
+                                    cond_scale=cond_scale,
+                                    add_cond_score=add_cond_score,
+                                    truncation_steps=truncation_steps,
+                                    return_pred_cond=return_pred_cond,
                                                     )
         if return_pred_cond:
             samples, intermediates, pred_cond = outputs
@@ -152,14 +143,10 @@ class DDIMSampler(object):
                       callback=None, timesteps=None, quantize_denoised=False,
                       mask=None, x0=None, img_callback=None, log_every_t=100,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
-                      unconditional_guidance_scale=1., unconditional_conditioning=None, dynamic_threshold=None,
-                      ucg_schedule=None,
-                      
-                      # TODO: configurations of condition adaptor
-                      target_cond=None, cond_fn=None,
+                      unconditional_guidance_scale=1., unconditional_conditioning=None, target_cond=None, cond_fn=None,
                       cond_model=None, blocks_indexes=None, cond_configs=None,
-                      cond_criterion=None, cond_scale=None, truncation_steps=None,
-                      ):
+                      cond_criterion=None, cond_scale=None, add_cond_score=None, truncation_steps=None,
+                      return_pred_cond=None):
         device = self.model.betas.device
         b = shape[0]
         if x_T is None:
@@ -189,32 +176,23 @@ class DDIMSampler(object):
                 img_orig = self.model.q_sample(x0, ts)  # TODO: deterministic forward pass?
                 img = img_orig * mask + (1. - mask) * img
 
-            if ucg_schedule is not None:
-                assert len(ucg_schedule) == len(time_range)
-                unconditional_guidance_scale = ucg_schedule[i]
-
             outs = self.p_sample_ddim(img, cond, ts, index=index, use_original_steps=ddim_use_original_steps,
                                       quantize_denoised=quantize_denoised, temperature=temperature,
                                       noise_dropout=noise_dropout, score_corrector=score_corrector,
                                       corrector_kwargs=corrector_kwargs,
                                       unconditional_guidance_scale=unconditional_guidance_scale,
-                                      unconditional_conditioning=unconditional_conditioning,
-                                      dynamic_threshold=dynamic_threshold,
-                                      
-                                      # TODO: configurations of condition adaptor
-                                      target_cond=target_cond, cond_fn=cond_fn,
+                                      unconditional_conditioning=unconditional_conditioning, target_cond=target_cond, cond_fn=cond_fn,
                                       cond_model=cond_model, blocks_indexes=blocks_indexes,
                                       cond_configs=cond_configs, cond_criterion=cond_criterion,
-                                      cond_scale=cond_scale, 
-                                      truncation_steps=truncation_steps,
-                                      skip_step_conditioning=skip_step_conditioning,
-                                      )
+                                      cond_scale=cond_scale, add_cond_score=add_cond_score,
+                                      truncation_steps=truncation_steps, return_pred_cond=return_pred_cond)
             # TODO: judge the number of returned items, if it is 3, meaning that the sampling process is still in the truncation steps,
             # TODO: if not, stop updating the prediction edge
             if len(outs) == 3:
                 img, pred_x0, pred_cond = outs
             else:    
                 img, pred_x0 = outs
+                
             if callback: callback(i)
             if img_callback: img_callback(pred_x0, i)
 
@@ -230,83 +208,77 @@ class DDIMSampler(object):
     @torch.no_grad()
     def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
                       temperature=1., noise_dropout=0., score_corrector=None, corrector_kwargs=None,
-                      unconditional_guidance_scale=1., unconditional_conditioning=None,
-                      dynamic_threshold=None,
-                      
-                      # TODO: configurations of condition adaptor
-                      target_cond=None, cond_fn=None,
+                      unconditional_guidance_scale=1., unconditional_conditioning=None, target_cond=None, cond_fn=None,
                       cond_model=None, blocks_indexes=None, cond_configs=None, cond_criterion=None,
-                      cond_scale=None, truncation_steps=None, return_pred_cond=None,
-                      ):
+                      cond_scale=None, add_cond_score=None, truncation_steps=None, return_pred_cond=None,):
         b, *_, device = *x.shape, x.device
 
-        # TODO: unconditional generation
+        # TODO: add condition under no condition (uncondtional)
         if unconditional_conditioning is None or unconditional_guidance_scale == 1.:
-            model_output = self.model.apply_model(x, t, c)
+            e_t = self.model.apply_model(x, t, c)
             
-            # TODO: introduce conditions for unconditional generation
             if cond_fn is not None:
                 # TODO: only add condition within the truncation steps, in order to manipulate the geometry of samples
                 if t > torch.tensor(truncation_steps).cuda(t.device):
                 # TODO: add condition only in the first T steps
-                    gradient = cond_fn(x=x, c=c, t=t, cond_configs=cond_configs, blocks_indexes=blocks_indexes,
+                    if return_pred_cond:
+                        gradient, pred_edge = cond_fn(x=x, c=c, t=t, cond_configs=cond_configs, blocks_indexes=blocks_indexes,
+                                                    target_cond=target_cond, model=cond_model, diffusion_model=self.model, return_pred_cond=return_pred_cond,
+                                                    criterion=cond_criterion)
+                    else:
+                        gradient = cond_fn(x=x, c=c, t=t, cond_configs=cond_configs, blocks_indexes=blocks_indexes,
                                             target_cond=target_cond, model=cond_model, diffusion_model=self.model, return_pred_cond=return_pred_cond,
                                             criterion=cond_criterion)
                     
-                    gradient = gradient * cond_scale * torch.norm(input=e_t - x, p=2) / torch.norm(input=gradient, p=2) 
-                    e_t = e_t + gradient
+                    gradient = gradient * cond_scale * torch.norm(input=e_t - x, p=2) / torch.norm(input=gradient, p=2)                        # TODO: normalization weight: important to keep the values balance
+                    if add_cond_score:
+                        e_t = e_t + gradient
+                    else:
+                        e_t = e_t - gradient
                 else:
                     e_t = e_t
             else:
                 e_t = e_t
-        
-        # TODO: text-to-image generation      
+                
+        # TODO: add condition under text condition
         else:
+            # TODO: implementation of classifier-free guidance
             x_in = torch.cat([x] * 2)
             t_in = torch.cat([t] * 2)
-            if isinstance(c, dict):
-                assert isinstance(unconditional_conditioning, dict)
-                c_in = dict()
-                for k in c:
-                    if isinstance(c[k], list):
-                        c_in[k] = [torch.cat([
-                            unconditional_conditioning[k][i],
-                            c[k][i]]) for i in range(len(c[k]))]
-                    else:
-                        c_in[k] = torch.cat([
-                                unconditional_conditioning[k],
-                                c[k]])
-            elif isinstance(c, list):
-                c_in = list()
-                assert isinstance(unconditional_conditioning, list)
-                for i in range(len(c)):
-                    c_in.append(torch.cat([unconditional_conditioning[i], c[i]]))
-            else:
-                c_in = torch.cat([unconditional_conditioning, c])
-            model_uncond, model_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
+            c_in = torch.cat([unconditional_conditioning, c])
+            e_t_uncond, e_t = self.model.apply_model(x_in, t_in, c_in).chunk(2)
             
             # TODO: compute conditioning & re-compute classifier-free guidance
             if cond_fn is not None:
                 # TODO: only add condition within the truncation steps, in order to manipulate the geometry of samples
-                # TODO: add condition only in the first T steps
-                    gradient = cond_fn(x=x_in.chunk(2)[0], c=c_in.chunk(2)[1], t=t_in.chunk(2)[0], cond_configs=cond_configs, blocks_indexes=blocks_indexes,
-                                            target_cond=target_cond, model=cond_model, diffusion_model=self.model, return_pred_cond=return_pred_cond,
-                                            criterion=cond_criterion)
+                if t > torch.tensor(truncation_steps).cuda(t.device):
+                    # TODO: add condition only in the first T steps
+                    if return_pred_cond:
+                        gradient, pred_edge = cond_fn(x=x_in.chunk(2)[0], c=c_in.chunk(2)[1], t=t_in.chunk(2)[0], cond_configs=cond_configs, blocks_indexes=blocks_indexes,
+                                                    target_cond=target_cond, model=cond_model, diffusion_model=self.model, return_pred_cond=return_pred_cond,
+                                                    criterion=cond_criterion)
+                    else:
+                        gradient = cond_fn(x=x_in.chunk(2)[0], c=c_in.chunk(2)[1], t=t_in.chunk(2)[0], cond_configs=cond_configs, blocks_indexes=blocks_indexes,
+                                                target_cond=target_cond, model=cond_model, diffusion_model=self.model, return_pred_cond=return_pred_cond,
+                                                criterion=cond_criterion)
+                    # if t <= torch.tensor(1000).cuda(t.device) and t >= torch.tensor(750).cuda(t.device):
+                    #     print(t)
+                    #     cond_scale = 5.0
                     
-                    gradient = gradient * cond_scale * torch.norm(input=model_t - x_in.chunk(2)[0], p=2) / torch.norm(input=gradient, p=2)                        # TODO: normalization weight: important to keep the values balance
-                    model_output = model_uncond + unconditional_guidance_scale * (model_t - model_uncond) + gradient
+                    gradient = gradient * cond_scale * torch.norm(input=e_t - x_in.chunk(2)[0], p=2) / torch.norm(input=gradient, p=2)                        # TODO: normalization weight: important to keep the values balance
+                    if add_cond_score:
+                        e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond) + gradient
+                    else:
+                        e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond) - gradient
+                else:
+                    e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
             else:
-                model_output = model_uncond + unconditional_guidance_scale * (model_t - model_uncond)
+                e_t = e_t_uncond + unconditional_guidance_scale * (e_t - e_t_uncond)
             
             t = t_in.chunk(2)[0]
-
-        if self.model.parameterization == "v":
-            e_t = self.model.predict_eps_from_z_and_v(x, t, model_output)
-        else:
-            e_t = model_output
-
+            
         if score_corrector is not None:
-            assert self.model.parameterization == "eps", 'not implemented'
+            assert self.model.parameterization == "eps"
             e_t = score_corrector.modify_score(self.model, e_t, x, t, c, **corrector_kwargs)
 
         alphas = self.model.alphas_cumprod if use_original_steps else self.ddim_alphas
@@ -317,75 +289,24 @@ class DDIMSampler(object):
         a_t = torch.full((b, 1, 1, 1), alphas[index], device=device)
         a_prev = torch.full((b, 1, 1, 1), alphas_prev[index], device=device)
         sigma_t = torch.full((b, 1, 1, 1), sigmas[index], device=device)
-        sqrt_one_minus_at = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index],device=device)
+        sqrt_one_minus_at = torch.full((b, 1, 1, 1), sqrt_one_minus_alphas[index], device=device)
 
         # current prediction for x_0
-        if self.model.parameterization != "v":
-            pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
-        else:
-            pred_x0 = self.model.predict_start_from_z_and_v(x, t, model_output)
-
+        pred_x0 = (x - sqrt_one_minus_at * e_t) / a_t.sqrt()
         if quantize_denoised:
             pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
-
-        if dynamic_threshold is not None:
-            raise NotImplementedError()
-
         # direction pointing to x_t
         dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t
         noise = sigma_t * noise_like(x.shape, device, repeat_noise) * temperature
         if noise_dropout > 0.:
             noise = torch.nn.functional.dropout(noise, p=noise_dropout)
-        x_prev = a_prev.sqrt() * pred_x0 + dir_xt + noise
-            
-        return x_prev, pred_x0
-
-    @torch.no_grad()
-    def encode(self, x0, c, t_enc, use_original_steps=False, return_intermediates=None,
-               unconditional_guidance_scale=1.0, unconditional_conditioning=None, callback=None):
-        num_reference_steps = self.ddpm_num_timesteps if use_original_steps else self.ddim_timesteps.shape[0]
-
-        assert t_enc <= num_reference_steps
-        num_steps = t_enc
-
-        if use_original_steps:
-            alphas_next = self.alphas_cumprod[:num_steps]
-            alphas = self.alphas_cumprod_prev[:num_steps]
+        x_prev = a_prev.sqrt() * pred_x0 + dir_xt
+        
+        # TODO: whether it is still in the truncation steps
+        if return_pred_cond and t > torch.tensor(truncation_steps).cuda(t.device):
+            return x_prev, pred_x0, pred_edge
         else:
-            alphas_next = self.ddim_alphas[:num_steps]
-            alphas = torch.tensor(self.ddim_alphas_prev[:num_steps])
-
-        x_next = x0
-        intermediates = []
-        inter_steps = []
-        for i in tqdm(range(num_steps), desc='Encoding Image'):
-            t = torch.full((x0.shape[0],), i, device=self.model.device, dtype=torch.long)
-            if unconditional_guidance_scale == 1.:
-                noise_pred = self.model.apply_model(x_next, t, c)
-            else:
-                assert unconditional_conditioning is not None
-                e_t_uncond, noise_pred = torch.chunk(
-                    self.model.apply_model(torch.cat((x_next, x_next)), torch.cat((t, t)),
-                                           torch.cat((unconditional_conditioning, c))), 2)
-                noise_pred = e_t_uncond + unconditional_guidance_scale * (noise_pred - e_t_uncond)
-
-            xt_weighted = (alphas_next[i] / alphas[i]).sqrt() * x_next
-            weighted_noise_pred = alphas_next[i].sqrt() * (
-                    (1 / alphas_next[i] - 1).sqrt() - (1 / alphas[i] - 1).sqrt()) * noise_pred
-            x_next = xt_weighted + weighted_noise_pred
-            if return_intermediates and i % (
-                    num_steps // return_intermediates) == 0 and i < num_steps - 1:
-                intermediates.append(x_next)
-                inter_steps.append(i)
-            elif return_intermediates and i >= num_steps - 2:
-                intermediates.append(x_next)
-                inter_steps.append(i)
-            if callback: callback(i)
-
-        out = {'x_encoded': x_next, 'intermediate_steps': inter_steps}
-        if return_intermediates:
-            out.update({'intermediates': intermediates})
-        return x_next, out
+            return x_prev, pred_x0
 
     @torch.no_grad()
     def stochastic_encode(self, x0, t, use_original_steps=False, noise=None):
@@ -405,7 +326,7 @@ class DDIMSampler(object):
 
     @torch.no_grad()
     def decode(self, x_latent, cond, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,
-               use_original_steps=False, callback=None):
+               use_original_steps=False):
 
         timesteps = np.arange(self.ddpm_num_timesteps) if use_original_steps else self.ddim_timesteps
         timesteps = timesteps[:t_start]
@@ -422,5 +343,4 @@ class DDIMSampler(object):
             x_dec, _ = self.p_sample_ddim(x_dec, cond, ts, index=index, use_original_steps=use_original_steps,
                                           unconditional_guidance_scale=unconditional_guidance_scale,
                                           unconditional_conditioning=unconditional_conditioning)
-            if callback: callback(i)
         return x_dec

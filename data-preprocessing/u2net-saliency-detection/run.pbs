@@ -1,0 +1,18 @@
+#PBS -N mask-generation
+#PBS -o /gdata1/liuchang/image_inpainting/mask_generation/$PBS_JOBID.out
+#PBS -e /gdata1/liuchang/image_inpainting/mask_generation/$PBS_JOBID.err
+#PBS -l nodes=1:gpus=1:s,walltime=3000:00:00
+#PBS -r y
+#PBS -m abef
+cd $PBS_O_WORKDIR
+echo Time is 'date'
+echo Directory is $PWD
+echo This job runs on following nodes:
+echo -n "Node:"
+cat $PBS_NODEFILE
+echo -n "Gpus:"
+cat $PBS_GPUFILE
+echo "CUDA_VISIBLE_DEVICES:"$CUDA_VISIBLE_DEVICES
+
+startdocker -P /ghome/liuchang -D /gdata/liuchang -u"-v /gdata1:/gdata1 -v /gpub:/gpub -e PYTHONPATH=/ghome/liuchang/pylib --ipc=host" -c "python /ghome/liuchang/image_inpainting/mask_generation/u2net/u2net_test.py"  bit:5000/luoxin_py3.8_pytorch1.9_cu10.2_lightning_hydra
+

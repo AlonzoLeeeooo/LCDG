@@ -122,9 +122,7 @@ class CheckpointFunction(torch.autograd.Function):
         ctx.run_function = run_function
         ctx.input_tensors = list(args[:length])
         ctx.input_params = list(args[length:])
-        ctx.gpu_autocast_kwargs = {"enabled": torch.is_autocast_enabled(),
-                                   "dtype": torch.get_autocast_gpu_dtype(),
-                                   "cache_enabled": torch.is_autocast_cache_enabled()}
+
         with torch.no_grad():
             output_tensors = ctx.run_function(*ctx.input_tensors)
         return output_tensors
@@ -132,19 +130,19 @@ class CheckpointFunction(torch.autograd.Function):
     @staticmethod
     def backward(ctx, *output_grads):
         ctx.input_tensors = [x.detach().requires_grad_(True) for x in ctx.input_tensors]
-        with torch.enable_grad(), \
-                torch.cuda.amp.autocast(**ctx.gpu_autocast_kwargs):
+        with torch.enable_grad():
             # Fixes a bug where the first op in run_function modifies the
             # Tensor storage in place, which is not allowed for detach()'d
             # Tensors.
             shallow_copies = [x.view_as(x) for x in ctx.input_tensors]
-            output_tensors = ctx.run_function(*shallow_copies)
+            output_tensors = ctx.run_function(*shallow_copies)            
         input_grads = torch.autograd.grad(
             output_tensors,
             ctx.input_tensors + ctx.input_params,
             output_grads,
             allow_unused=True,
         )
+                
         del ctx.input_tensors
         del ctx.input_params
         del output_tensors
