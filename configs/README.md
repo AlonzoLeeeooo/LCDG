@@ -10,7 +10,7 @@ This document mainly illustrates how to modify configuration files for various f
 - [<u>1. Configure Pre-trained Model Weights</u>](#configure-pre-trained-model-weights)
 - [<u>2. Configure Training Data</u>](#configure-training-data)
 
-We present an example configuration file `example.yaml` for reference.
+We present an example configuration file [`example.yaml`](configs/example.yaml) for reference.
 
 <!-- omit in toc -->
 # Configure Pre-trained Model Weights
