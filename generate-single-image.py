@@ -133,9 +133,7 @@ if __name__ == "__main__":
     # load configurations
     model_configs = OmegaConf.load(args.base)
     configs = {'model_configs': model_configs, 'args': args}
-    
-    args.use_style_loss = True if model_configs['condition_aligner_config']['cond_type'] == "style" else False
-    
+        
     if args.DDP:
         assert "We currently only support single-GPU sampling."
     else:

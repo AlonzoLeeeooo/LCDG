@@ -12,12 +12,13 @@ Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
 - [<u>1. News</u>](#news)
 - [<u>2. To-Do Lists</u>](#to-do-lists)
 - [<u>3. Overview of LaCon</u>](#overview-of-lacon)
-- [<u>4. Prerequisites</u>](#prerequisites)
-- [<u>5. Training of Condition Aligner</u>](#training-of-condition-aligner)
-- [<u>6. Sampling with Condition Aligner</u>](#sampling-with-condition-aligner)
-- [<u>7. Evaluation</u>](#evaluation)
-- [<u>8. Citation</u>](#citation)
-- [<u>9. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
+- [<u>4. Code Structure</u>](#code-structure)
+- [<u>5. Prerequisites</u>](#prerequisites)
+- [<u>6. Training of Condition Aligner</u>](#training-of-condition-aligner)
+- [<u>7. Sampling with Condition Aligner</u>](#sampling-with-condition-aligner)
+- [<u>8. Evaluation</u>](#evaluation)
+- [<u>9. Citation</u>](#citation)
+- [<u>10. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
 
 If you have any questions about this work, please feel free to [start a new issue](https://github.com/AlonzoLeeeooo/LCDG/issues/new) or [propose a PR](https://github.com/AlonzoLeeeooo/LCDG/pulls).
 
@@ -39,9 +40,35 @@ If you have any questions about this work, please feel free to [start a new issu
 # Overview of LaCon
 ![tissor](github-materials/teasor.png)
 > Diffusion models have demonstrated impressive abilities in generating photo-realistic and creative images. To offer more controllability for the generation process, existing studies, termed as early-constraint methods in this paper, leverage extra conditions and incorporate them into pre-trained diffusion models. Particularly, some of them adopt condition-specific modules to handle conditions separately, where they struggle to generalize across other conditions. Although follow-up studies present unified solutions to solve the generalization problem, they also require extra resources to implement, e.g., additional inputs or parameter optimization, where more flexible and efficient solutions are expected to perform steerable guided image synthesis. In this paper, we present an alternative paradigm, namely Late-Constraint Diffusion (LaCon), to simultaneously integrate various conditions into pre-trained diffusion models. Specifically, LaCon establishes an alignment between the external condition and the internal features of diffusion models, and utilizes the alignment to incorporate the target condition, guiding the sampling process to produce tailored results. Experimental results on COCO dataset illustrate the effectiveness and superior generalization capability of LaCon under various conditions and settings. Ablation studies investigate the functionalities of different components in LaCon, and illustrate its great potential to serve as an efficient solution to offer flexible controllability for diffusion models.
-> 
+
 [<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
 
+
+<!-- omit in toc -->
+# Code Structure
+This GitHub repo is constructed following the code structure below:
+```
+LaCon/
+└── condition_aligner_src                  <----- Source code of LaCon
+    ├── __init__.py
+    ├── condition_aligner_dataset.py       <----- Dataset
+    ├── condition_aligner_model.py         <----- Model
+    └── condition_aligner_runner.py        <----- Runner (train and inference)
+├── configs                                <----- Configuration files
+├── data-preprocessing                     <----- Code of data pre-processing
+├── evaluation-metrics                     <----- Code of evaluation metrics
+├── github-materials
+├── ldm                                    <----- Source code of LDM (Stable Diffusion)
+├── taming                                 <----- Source code of `taming` package
+├── tools                                  <----- Code of toolkits to assist data pre-processing
+├── README.md
+├── condition-aligner-inference.py         <----- Script to reconstruct conditions with the condition aligner
+├── condition-aligner-train.py             <----- Script to train condition aligner
+├── generate-batch-image.py                <----- Script to generate results in batch
+├── generate-single-image.py               <----- Script to generate a single result
+└── install.sh                             <----- Bash script to install the virtual environment
+```
+[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
 
 <!-- omit in toc -->
 # Prerequisites

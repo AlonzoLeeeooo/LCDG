@@ -45,14 +45,12 @@ def get_parser(**parser_kwargs):
     parser.add_argument("-b", "--base", type=str, metavar="base_config.yaml", help="path of config file")
     parser.add_argument("-s", "--seed", type=int, default=23, help="setting seed")
     parser.add_argument("--get_files_from_path", action='store_true', help='get data from folder or flist')
-    parser.add_argument("--indir", type=str, default='/mnt/g/dataset/fscoco/sub_test_flist.txt', help="input images dir")
-    parser.add_argument("--text", type=str, default='/mnt/g/dataset/fscoco/text', help="path prefix of text")
-    parser.add_argument("--cond", type=str, default='/mnt/g/dataset/fscoco/saliencies', help='path prefix of condition')
+    parser.add_argument("--indir", type=str, default='', help="input images dir")
+    parser.add_argument("--text", type=str, default='', help="path prefix of text")
+    parser.add_argument("--cond", type=str, default='', help='path prefix of condition')
     parser.add_argument("--outdir", type=str, default='', help="output dir")
     parser.add_argument("--inference_num", type=int, default=100, help='number of inference')
-    parser.add_argument("--verbose", action='store_true', help='turn on verbose mode')
     parser.add_argument("--resume", type=str, help='resume from checkpoint')
-    parser.add_argument("--use_l1", action='store_true', help='use L1 norm as loss function')
     parser.add_argument("--master_port", type=str, default='12355', help='master port for setting up DDP process, default by 12355 as string type')
     parser.add_argument("--DDP", action='store_true', help='use ddp or not')
 
@@ -78,19 +76,16 @@ if __name__ == "__main__":
     
     args.inference = True
     
-    # TODO: load config file
-    model_configs = OmegaConf.load(os.path.join(args.base, 'config.yaml'))
-    options = json.load(open(os.path.join(args.base, 'config.json'), 'r'))
-    options.update(vars(args))
+    # load config file
+    model_configs = OmegaConf.load(args.base)
+    configs = {'model_configs': model_configs, 'args': args}
     
-    # TODO: prepare the logdir if not exist
+    # prepare the logdir if not exist
     path = args.outdir
     os.makedirs(path, exist_ok=True)
     print('Output folder: %s' % (path))
-    
-    configs = {'options': options, 'args': args, 'model_configs': model_configs}
-    
-    # TODO: multi GPU inference (no need)
+        
+    # multi GPU inference (no need)
     world_size = torch.cuda.device_count()
     
     if args.DDP:
