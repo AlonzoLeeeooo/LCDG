@@ -22,6 +22,10 @@ from data_loader import SalObjDataset
 from model import U2NET # full size version 173.6 MB
 from model import U2NETP # small version u2net 4.7 MB
 
+import cv2
+import decord
+from einops import rearrange
+
 # funciton to return a path list from a directory
 def get_files(path):
     file_list = []
@@ -52,66 +56,42 @@ def normPRED(d):
 
     return dn
 
-def save_output(image_name,pred,d_dir):
+def save_output(filename, pred, outdir, height, width):
 
     predict = pred
     predict = predict.squeeze()
     predict_np = predict.cpu().data.numpy()
 
-    im = Image.fromarray(predict_np*255).convert('RGB')
-    img_name = image_name.split(os.sep)[-1]
-    image = io.imread(os.path.join("/gpub/imagenet_raw/train", image_name))
-    imo = im.resize((image.shape[1],image.shape[0]),resample=Image.BILINEAR)
+    im = Image.fromarray(predict_np * 255).convert('RGB')
+    imo = im.resize((height, width),resample=Image.BILINEAR)
 
-    pb_np = np.array(imo)
-
-    aaa = img_name.split(".")
-    bbb = aaa[0:-1]
-    imidx = bbb[0]
-    for i in range(1,len(bbb)):
-        imidx = imidx + "." + bbb[i]
-
-    imo.save(d_dir+imidx+'.png')
+    imo.save(os.path.join(outdir, filename + '.png'))
 
 def main():
 
-    # --------- 1. get image path and name ---------
-    model_name='u2net'#u2netp
+    # 1. Define basic configurations
+    model_name = 'u2net'
 
     import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument('--indir', default='', type=str)
-    parser.add_argument('--outdir', default='', type=str)
-    parser.add_argument('--model_dir', default='checkpoints/u2net/u2net.pth', type=str)
+    parser.add_argument('--indir', default='', type=str, help='Input path of video frames')
+    parser.add_argument('--outdir', default='', type=str, help='Output path of extracted mask of first frames')
+    parser.add_argument('--model_dir', default='', type=str, help='Pre-trained model weights of U2-Net')
 
     args = parser.parse_args()
 
     image_dir = args.indir
     prediction_dir = args.outdir
+
     if not prediction_dir.endswith('/'):
         prediction_dir = prediction_dir + '/'
     model_dir = args.model_dir
 
-    img_name_list = get_files(image_dir)
 
-    # --------- 2. dataloader ---------
-    #1. dataloader
-    test_salobj_dataset = SalObjDataset(img_name_list = img_name_list,
-                                        lbl_name_list = [],
-                                        transform=transforms.Compose([RescaleT(320),
-                                                                      ToTensorLab(flag=0)])
-                                        )
-    test_salobj_dataloader = DataLoader(test_salobj_dataset,
-                                        batch_size=1,
-                                        shuffle=False,
-                                        num_workers=8)
-
-    # --------- 3. model define ---------
+    # 2. Define model
     if(model_name=='u2net'):
-        print("...load U2NET---173.6 MB")
         net = U2NET(3,1)
     elif(model_name=='u2netp'):
-        print("...load U2NEP---4.7 MB")
         net = U2NETP(3,1)
 
     if torch.cuda.is_available():
@@ -120,16 +100,20 @@ def main():
     else:
         net.load_state_dict(torch.load(model_dir, map_location='cpu'))
     net.eval()
+    
+    
+    # 3. Inference
     count = 0
-    # --------- 4. inference for each image ---------
-    for i_test, data_test in enumerate(test_salobj_dataloader):
-        count += 1
-        sys.stdout.flush()
-        print(f"Progress: [{count}/{len(img_name_list)}]")
-        print("inferencing:",img_name_list[i_test].split(os.sep)[-1])
-
-        inputs_test = data_test['image']
-        inputs_test = inputs_test.type(torch.FloatTensor)
+    for image_path in os.listdir(args.indir):
+        # 3.1 Load in image
+        image = cv2.imread(os.path.join(args.indir, image_path))
+        filename = image_path.replace('.png', '').replace('.jpg', '')
+        height, width, _ = image.shape
+        
+        # 3.2 Pass the first frame forward the model
+        # The same as the original implementation of U2-Net
+        inputs_test = image
+        inputs_test = torch.from_numpy(inputs_test.astype(np.float32) / 255.).unsqueeze(0).permute(0, 3, 1, 2)
 
         if torch.cuda.is_available():
             inputs_test = Variable(inputs_test.cuda())
@@ -137,18 +121,15 @@ def main():
             inputs_test = Variable(inputs_test)
 
         d1,d2,d3,d4,d5,d6,d7= net(inputs_test)
-
-        # normalization
         pred = d1[:,0,:,:]
         pred = normPRED(pred)
 
-        # save results to test_results folder
+        # 3.3 Save outputted mask
         if not os.path.exists(prediction_dir):
             os.makedirs(prediction_dir, exist_ok=True)
-        save_output(img_name_list[i_test],pred,prediction_dir)
+        save_output(filename, pred, prediction_dir, height=height, width=width)
 
         del d1,d2,d3,d4,d5,d6,d7
 
 if __name__ == "__main__":
     main()
-    # /gpub/imagenet_raw/train
