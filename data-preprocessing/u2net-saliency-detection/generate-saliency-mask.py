@@ -76,7 +76,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--indir', default='', type=str, help='Input path of video frames')
     parser.add_argument('--outdir', default='', type=str, help='Output path of extracted mask of first frames')
-    parser.add_argument('--model_dir', default='', type=str, help='Pre-trained model weights of U2-Net')
+    parser.add_argument('--model_dir', default='data-preprocessing/u2net-saliency-detection/checkpoints/u2net.pth', type=str, help='Pre-trained model weights of U2-Net')
 
     args = parser.parse_args()
 
