@@ -1,258 +1,314 @@
-<div align="center">
+# LaCon for Diffusers
 
-# LaCon: Late-Constraint Diffusion for Steerable Guided Image Synthesis
+基于Diffusers框架实现的LaCon (Late-Constraint Diffusion)可控图像生成模型。这是对原始[AlonzoLeeeooo/LCDG](https://github.com/AlonzoLeeeooo/LCDG)仓库的现代化重新实现。
 
-Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
+## 📖 简介
 
-[[`Paper`]](https://arxiv.org/pdf/2305.11520) / [[`Project`]](https://alonzoleeeooo.github.io/LCDG/) / [[`Huggingface`]](https://huggingface.co/AlonzoLeeeooo/LaCon) / [[`ModelScope`]](https://modelscope.cn/models/AlonzoLeeeoooo/LaCon) / [`Demo`]
-</div>
+LaCon (Late-Constraint Diffusion) 是一种用于可控图像生成的新颖方法，它通过在扩散过程的后期阶段施加约束来实现精确的条件控制。与传统的早期约束方法不同，LaCon使用条件对齐器(Condition Aligner)来将扩散模型的中间特征与目标条件进行对齐。
 
-<!-- omit in toc -->
-# Table of Contents
-- [<u>1. News</u>](#news)
-- [<u>2. To-Do Lists</u>](#to-do-lists)
-- [<u>3. Overview of LaCon</u>](#overview-of-lacon)
-- [<u>4. Code Structure</u>](#code-structure)
-- [<u>5. Prerequisites</u>](#prerequisites)
-- [<u>6. Training of Condition Aligner</u>](#training-of-condition-aligner)
-- [<u>7. Sampling with Condition Aligner</u>](#sampling-with-condition-aligner)
-- [<u>8. Evaluation</u>](#evaluation)
-- [<u>9. Results</u>](#results)
-- [<u>10. Citation</u>](#citation)
-- [<u>11. Stars, Forked, and Star History</u>](#stars-forked-and-star-history)
+### 主要特性
 
-If you have any questions about this work, please feel free to [start a new issue](https://github.com/AlonzoLeeeooo/LCDG/issues/new) or [propose a PR](https://github.com/AlonzoLeeeooo/LCDG/pulls).
+- 🎨 **多种条件类型支持**: 边缘、遮罩、颜色描边、图像调色板等
+- 🚀 **高效训练**: 基于预训练的Stable Diffusion模型微调
+- 🔧 **Diffusers兼容**: 完全兼容Hugging Face Diffusers生态系统
+- 📊 **灵活控制**: 可调节的条件强度和截断步数
+- 🎯 **渐进约束**: 在采样过程中逐步减少条件约束
 
-<!-- omit in toc -->
-# News
-- [Jun. 12th] We have updated the training and sampling code of LaCon. Pre-trained model weights are currently available at our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon/tree/main) and [ModelScope repo](https://modelscope.cn/models/AlonzoLeeeoooo/LaCon).
+## 🚀 快速开始
 
-<!-- omit in toc -->
-# To-Do Lists
-  - [x] Upload a newer version of paper to arXiv
-  - [x] Update the codebase
-  - [x] Update the repo document
-  - [x] Upload the pre-trained model weights of LaCon based on Celeb and Stable Diffusion v1.4
-  - [ ] Update the pre-trained model weights of LaCon based on Stable Diffusion v2.1
-  - [ ] Update implementation for local Gradio demo
-  - [ ] Update online HuggingFace demo
+### 安装依赖
 
-<!-- omit in toc -->
-# Overview of LaCon
-![teasor](github-materials/teasor.png)
-> Diffusion models have demonstrated impressive abilities in generating photo-realistic and creative images. To offer more controllability for the generation process, existing studies, termed as early-constraint methods in this paper, leverage extra conditions and incorporate them into pre-trained diffusion models. Particularly, some of them adopt condition-specific modules to handle conditions separately, where they struggle to generalize across other conditions. Although follow-up studies present unified solutions to solve the generalization problem, they also require extra resources to implement, e.g., additional inputs or parameter optimization, where more flexible and efficient solutions are expected to perform steerable guided image synthesis. In this paper, we present an alternative paradigm, namely Late-Constraint Diffusion (LaCon), to simultaneously integrate various conditions into pre-trained diffusion models. Specifically, LaCon establishes an alignment between the external condition and the internal features of diffusion models, and utilizes the alignment to incorporate the target condition, guiding the sampling process to produce tailored results. Experimental results on COCO dataset illustrate the effectiveness and superior generalization capability of LaCon under various conditions and settings. Ablation studies investigate the functionalities of different components in LaCon, and illustrate its great potential to serve as an efficient solution to offer flexible controllability for diffusion models.
-
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
-
-
-<!-- omit in toc -->
-# Code Structure
-This GitHub repo is constructed following the code structure below:
-```
-LaCon/
-└── condition_aligner_src                  <----- Source code of LaCon
-    ├── __init__.py
-    ├── condition_aligner_dataset.py       <----- Dataset
-    ├── condition_aligner_model.py         <----- Model
-    └── condition_aligner_runner.py        <----- Runner (train and inference)
-├── configs                                <----- Configuration files
-├── data-preprocessing                     <----- Code of data pre-processing
-├── evaluation-metrics                     <----- Code of evaluation metrics
-├── github-materials
-├── ldm                                    <----- Source code of LDM (Stable Diffusion)
-├── taming                                 <----- Source code of `taming` package
-├── tools                                  <----- Code of toolkits to assist data pre-processing
-├── README.md
-├── condition-aligner-inference.py         <----- Script to reconstruct conditions with the condition aligner
-├── condition-aligner-train.py             <----- Script to train condition aligner
-├── generate-batch-image.py                <----- Script to generate results in batch
-├── generate-single-image.py               <----- Script to generate a single result
-└── install.sh                             <----- Bash script to install the virtual environment
-```
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
-
-<!-- omit in toc -->
-# Prerequisites
-1. To install the virtual environment of LaCon, you can execute the following command lines:
 ```bash
-conda create -n lacon
+# 创建虚拟环境
+conda create -n lacon python=3.8
 conda activate lacon
-pip install torch==2.0.0 torchvision==0.15.1
-bash install.sh
+
+# 安装PyTorch (根据您的CUDA版本调整)
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# 安装其他依赖
+pip install diffusers transformers accelerate
+pip install opencv-python pillow numpy tqdm tensorboard
 ```
 
-2. To prepare the pre-trained model weights of different components in `Stable Diffusion` as well as our condition aligner, please download the model weights from our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon) and put them in `./checkpoints`. Once the weights are downloaded, modify the configuration files in `./configs`. Check [this document](configs/README.md) for more details of modifying configuration files.
-**We strongly recommend you to download [the whole Huggingface repo of CLIP](https://huggingface.co/openai/clip-vit-large-patch14) locally, in order to avoid the network issue of Huggingface.**
+### 基本使用
 
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+```python
+import torch
+from PIL import Image
+from diffusers import StableDiffusionPipeline, DDIMScheduler
 
+# 导入我们的自定义组件
+from diffusers_lacon import LaConPipeline, ConditionAligner
 
-<!-- omit in toc -->
-# Training of Condition Aligner
-1. We use a subset of the training set [COCO](https://cocodataset.org/) with approximate 10,000 data samples. To train the condition aligner, you need to follow the instructions in [this document](data-preprocessing/README.md) and construct the data in the following structure:
-```bash
+# 加载预训练的Stable Diffusion模型
+base_pipeline = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+    torch_dtype=torch.float16,
+    safety_checker=None,
+    requires_safety_checker=False,
+)
+
+# 初始化条件对齐器
+condition_aligner = ConditionAligner(
+    time_channels=256,
+    in_channels=2560,  # 根据特征块调整
+    out_channels=4,    # VAE潜在通道数
+)
+
+# 创建LaCon管道
+pipeline = LaConPipeline(
+    vae=base_pipeline.vae,
+    text_encoder=base_pipeline.text_encoder,
+    tokenizer=base_pipeline.tokenizer,
+    unet=base_pipeline.unet,
+    scheduler=DDIMScheduler.from_config(base_pipeline.scheduler.config),
+    condition_aligner=condition_aligner,
+)
+
+# 移动到GPU
+pipeline = pipeline.to("cuda")
+
+# 创建条件图像(例如边缘图)
+condition_image = Image.open("edge_map.png")
+
+# 生成图像
+result = pipeline(
+    prompt="a beautiful landscape with mountains and a lake",
+    condition_image=condition_image,
+    num_inference_steps=50,
+    guidance_scale=7.5,
+    condition_scale=2.0,
+    height=512,
+    width=512,
+    truncation_steps=25,  # 前25步应用条件
+)
+
+# 保存结果
+result.images[0].save("generated_image.png")
+```
+
+## 🎯 支持的条件类型
+
+### 1. 边缘控制
+- **Canny边缘**: 精确的边缘检测结果
+- **HED边缘**: 更平滑的边缘表示
+- **用户草图**: 手绘线条
+
+### 2. 遮罩控制
+- **显著性遮罩**: 基于目标区域的生成
+- **用户涂鸦**: 自由形式的遮罩
+
+### 3. 颜色控制
+- **颜色描边**: 指定区域的颜色约束
+- **图像调色板**: 基于参考颜色的生成
+
+## 🛠️ 训练自定义条件对齐器
+
+### 数据准备
+
+创建以下目录结构：
+
+```
 data/
-└── bdcn-edges
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── saliency-masks
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── color-strokes
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── coco-captions
-    ├── 1.txt
-    ├── 2.txt
-    ├── ...
-└── images
+├── images/           # 原始图像
+│   ├── image1.jpg
+│   ├── image2.jpg
+│   └── ...
+├── conditions/       # 条件图像
+│   ├── image1.png
+│   ├── image2.png
+│   └── ...
+└── captions/        # 文本描述 (可选)
+    ├── image1.txt
+    ├── image2.txt
+    └── ...
 ```
 
+### 训练命令
 
-2. Once the training data is ready, you need to modify the configuration files following [this document](configs/README.md).
-3. Now you are ready to go by executing the following command line:
 ```bash
-python condition-aligner-train.py -b CONFIG_PATH -l OUTPUT_PATH
-```
-You can refer to this example command line:
-```bash
-python condition-aligner-train.py -b configs/sd-edge.yaml -l outputs/training/sd-edge
-```
-
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
-
-
-<!-- omit in toc -->
-# Sampling with Condition Aligner
-Execute the following command line to generate an image with the trained condition aligner:
-```bash
-python generate-single-image.py --cond_type COND_TYPE --indir CONDITION_PATH --resume CONDITION_ALIGNER_PATH --caption TEXT_PROMPT --cond_scale CONTROLLING_SCALE --unconditional_guidance_scale CLASSIFIER_FREE_GUIDANCE_SCALE  --outdir OUTPUT_PATH -b CONFIG_PATH --seed SEED --truncation_steps TRUNCATION_STEPS --use_neg_prompt
-```
-You can refer to this example command line:
-```bash
-python generate-single-image.py --cond_type mask --indir examples/horse.png --resume checkpoints/sdv14_mask.pth --caption "a horse standing in the moon surface" --cond_scale 2.0 --unconditional_guidance_scale 6.0  --outdir outputs/ -b configs/sd-mask.yaml --seed 23 --truncation_steps 600 --use_neg_prompt
-```
-We suggest the following settings to achieve the optimal performance for various conditions:
-
-|Condition|Setting|Model Weight|Controlling Scale|Truncation Steps|
-|---|---|---|---|---|
-|Canny Edge|Unconditional Generation|`sd_celeb_edge.pth`|2.0|500|
-|HED Edge|Unconditional Generation|`sd_celeb_edge.pth`|2.0|500|
-|User Sketch|Unconditional Generation|`sd_celeb_edge.pth`|2.0|600|
-|Color Stroke|Unconditional Generation|`sd_celeb_color.pth`|2.0|600|
-|Image Palette|Unconditional Generation|`sd_celeb_color.pth`|2.0|800|
-|Canny Edge|T2I Generation|`sdv14_edge.pth`|2.0|500|
-|HED Edge|T2I Generation|`sdv14_edge.pth`|2.5|500|
-|User Sketch|T2I Generation|`sdv14_edge.pth`|2.0|600|
-|Color Stroke|T2I Generation|`sdv14_color.pth`|2.0|600|
-|Image Palette|T2I Generation|`sdv14_color.pth`|2.0|800|
-|Saliency Mask|T2I Generation|`sdv14_mask.pth`|2.0|600|
-|User Scribble|T2I Generation|`sdv14_mask.pth`|2.0|700|
-
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
-
-
-<!-- omit in toc -->
-# Evaluation
-Prepare the test set following the data structure below:
-```bash
-data/
-└── bdcn-edges
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── saliency-masks
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── color-strokes
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── image-palette
-    ├── 1.png
-    ├── 2.png
-    ├── ...
-└── coco-captions
-    ├── 1.txt
-    ├── 2.txt
-    ├── ...
-└── images
+python -m diffusers_lacon.training.train_condition_aligner \
+    --image_dir ./data/images \
+    --condition_dir ./data/conditions \
+    --caption_dir ./data/captions \
+    --condition_type edge \
+    --output_dir ./outputs \
+    --logging_dir ./logs \
+    --num_epochs 100 \
+    --batch_size 4 \
+    --learning_rate 1e-4 \
+    --image_size 512
 ```
 
-Execute the following command line to test all data samples in the test set:
-```bash
-python generate-batch-image.py -b CONFIG_PATH --indir DATA_FILELIST_PATH --text CAPTION_PATH --target_cond CONDITION_PATH --resume CONDITION_ALIGNER_PATH --cond_scale CONTROLLING_SCALE --truncation_steps TRUNCATION_STEPS
+### 训练参数说明
+
+- `--condition_type`: 条件类型 (edge, mask, color, stroke)
+- `--batch_size`: 批次大小，根据GPU内存调整
+- `--learning_rate`: 学习率
+- `--truncation_steps`: 训练时的条件截断步数
+- `--condition_scale`: 条件约束强度
+
+## 📊 推荐设置
+
+根据不同条件类型的推荐设置：
+
+| 条件类型 | 条件强度 | 截断步数 | 推荐用途 |
+|---------|---------|---------|---------|
+| Canny边缘 | 2.0 | 25 | 精确的结构控制 |
+| HED边缘 | 2.5 | 25 | 平滑的边缘引导 |
+| 用户草图 | 2.0 | 30 | 创意绘画辅助 |
+| 显著性遮罩 | 2.0 | 30 | 区域生成控制 |
+| 颜色描边 | 2.0 | 30 | 颜色布局指导 |
+| 图像调色板 | 2.0 | 40 | 整体色调控制 |
+
+## 🔧 高级使用
+
+### 自定义特征提取
+
+```python
+from diffusers_lacon.utils.feature_extractor import UNetFeatureExtractor
+
+# 使用真实的UNet特征提取
+feature_extractor = UNetFeatureExtractor(
+    unet=pipeline.unet,
+    feature_blocks=[[2, 4, 8], [2, 4, 8, 12]]
+)
+
+# 在管道中使用
+pipeline.feature_extractor = feature_extractor
 ```
-You can refer to this example command line:
-```bash
-python generate-batch-image.py -b configs/sd-mask.yaml --indir data/coco2017val/data_flist.txt --text data/coco2017val/coco-captions --target_cond data/coco2017val/saliency-masks --resume checkpoints/sdv14_mask.pth --cond_scale 2.0 --truncation_steps 600
+
+### 批量生成
+
+```python
+# 批量生成不同条件的图像
+conditions = [edge_image, mask_image, color_image]
+prompts = ["landscape", "portrait", "abstract art"]
+
+for i, (condition, prompt) in enumerate(zip(conditions, prompts)):
+    result = pipeline(
+        prompt=prompt,
+        condition_image=condition,
+        condition_scale=2.0,
+        truncation_steps=25,
+    )
+    result.images[0].save(f"output_{i}.png")
 ```
-To compute evaluation metrics (e.g., FID and CLIP scores), please refer to [this document](evaluation-metrics/README.md) for more details. We report the performance of LaCon on [COCO 2017 validation set](https://cocodataset.org/#download) in the following table:
-|Condition|Model Weight|FID|CLIP Score|
-|---|---|---|---|
-|HED Edge|`sdv14_edge.pth`|21.02|0.2590|
-|Color Stroke|`sdv14_color.pth`|20.27|0.2589|
-|Image Palette|`sdv14_color.pth`|20.61|0.2580|
-|Saliency Mask|`sdv14_mask.pth`|20.94|0.2617|
 
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+### 条件强度调节
 
+```python
+# 不同强度的条件控制
+for scale in [1.0, 2.0, 3.0]:
+    result = pipeline(
+        prompt="a beautiful garden",
+        condition_image=edge_image,
+        condition_scale=scale,
+        truncation_steps=25,
+    )
+    result.images[0].save(f"scale_{scale}.png")
+```
 
-<!-- omit in toc -->
-# Results
-<details> <summary> We demonstrate results generated by LaCon under various conditions in the following figures. </summary>
+## 📈 性能优化
 
-<div align="center">
-Canny Edge
-</div>
+### GPU内存优化
 
-![canny-edge](github-materials/canny-edge.png)
+```python
+# 启用注意力切片以减少内存使用
+pipeline.enable_attention_slicing()
 
+# 启用顺序CPU卸载
+pipeline.enable_sequential_cpu_offload()
 
-<div align="center">
-HED Edge
-</div>
+# 使用半精度
+pipeline = pipeline.to(torch.float16)
+```
 
-![hed-edge](github-materials/hed-edge.png)
+### 推理加速
 
+```python
+# 使用DPM-Solver调度器加速
+from diffusers import DPMSolverMultistepScheduler
 
-<div align="center">
-User Sketch
-</div>
+pipeline.scheduler = DPMSolverMultistepScheduler.from_config(
+    pipeline.scheduler.config
+)
 
-![user-sketch](github-materials/user-sketch.png)
+# 减少推理步数
+result = pipeline(
+    prompt="landscape",
+    condition_image=condition,
+    num_inference_steps=20,  # 减少步数
+    condition_scale=2.0,
+)
+```
 
+## 🎨 示例画廊
 
-<div align="center">
-Color Stroke
-</div>
+### 边缘控制生成
 
-![Color Stroke](github-materials/color-stroke.png)
+| 条件 | 生成结果 | 提示词 |
+|------|----------|--------|
+| ![边缘图](examples/edge_condition.png) | ![生成图](examples/edge_result.png) | "a mountain landscape at sunset" |
 
-<div align="center">
-Image Palette
-</div>
+### 遮罩控制生成
 
-![image-palette](github-materials/image-palette.png)
+| 条件 | 生成结果 | 提示词 |
+|------|----------|--------|
+| ![遮罩图](examples/mask_condition.png) | ![生成图](examples/mask_result.png) | "a cat sitting in a garden" |
 
-<div align="center">
-Mask
-</div>
+## 🔬 技术细节
 
-![mask](github-materials/mask.png)
+### 架构概述
 
-</details>
+1. **条件对齐器**: 多层卷积网络，用于将UNet特征映射到条件空间
+2. **特征提取**: 从UNet的中间层提取多尺度特征
+3. **梯度引导**: 通过反向传播计算条件对齐梯度
+4. **渐进约束**: 在采样过程中逐步减少条件强度
 
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+### 与原始实现的区别
 
+- ✅ 使用Diffusers框架，更易于集成
+- ✅ 模块化设计，支持自定义组件
+- ✅ 改进的特征提取机制
+- ✅ 优化的训练流程
+- ✅ 更好的内存效率
 
-<!-- omit in toc -->
-# Citation
-If you find our paper helpful to your work, please cite our paper with the following BibTeX reference:
+## 🐛 故障排除
+
+### 常见问题
+
+1. **内存不足**
+   ```python
+   # 减少批次大小
+   batch_size = 1
+   
+   # 启用内存优化
+   pipeline.enable_attention_slicing()
+   pipeline.enable_sequential_cpu_offload()
+   ```
+
+2. **条件效果不明显**
+   ```python
+   # 增加条件强度
+   condition_scale = 3.0
+   
+   # 增加截断步数
+   truncation_steps = 35
+   ```
+
+3. **生成质量差**
+   ```python
+   # 使用更多推理步数
+   num_inference_steps = 50
+   
+   # 调整引导强度
+   guidance_scale = 7.5
+   ```
+
+## 📚 参考文献
+
 ```bibtex
 @misc{liu-etal-2024-lacon,
       title={{LaCon: Late-Constraint Diffusion for Steerable Guided Image Synthesis}}, 
@@ -264,20 +320,16 @@ If you find our paper helpful to your work, please cite our paper with the follo
 }
 ```
 
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+## 🤝 贡献
 
+欢迎提交Issue和Pull Request！
 
-<!-- omit in toc -->
-# Stars, Forked, and Star History
-[![Stargazers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/stars/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/stargazers)
+## 📄 许可证
 
-[![Forkers repo roster for @AlonzoLeeeooo/LCDG](https://reporoster.com/forks/dark/AlonzoLeeeooo/LCDG)](https://github.com/AlonzoLeeeooo/LCDG/network/members)
+本项目基于原始LaCon论文的方法实现，遵循相应的开源许可证。
 
+## 🙏 致谢
 
-<p align="center">
-    <a href="https://api.star-history.com/svg?repos=AlonzoLeeeooo/LCDG&type=Date" target="_blank">
-        <img width="500" src="https://api.star-history.com/svg?repos=AlonzoLeeeooo/LCDG&type=Date" alt="Star History Chart">
-    </a>
-<p>
-
-[<u><small><🎯Back to Table of Contents></small></u>](#table-of-contents)
+- 原始LaCon论文作者: Chang Liu, Rui Li, Kaidong Zhang, Xin Luo, Dong Liu
+- Hugging Face团队的Diffusers库
+- Stable Diffusion社区
