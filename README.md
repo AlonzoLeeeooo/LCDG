@@ -25,6 +25,7 @@ If you have any questions about this work, please feel free to [start a new issu
 
 <!-- omit in toc -->
 # News
+- [Dec. 11th, 2025] Our paper titled ["StableV2V: Stablizing Shape Consistency in Video-to-Video Editing"](https://ieeexplore.ieee.org/document/11272911) is accepted at TCSVT 2025!
 - [Jun. 12th] We have updated the training and sampling code of LaCon. Pre-trained model weights are currently available at our [Huggingface repo](https://huggingface.co/AlonzoLeeeooo/LaCon/tree/main) and [ModelScope repo](https://modelscope.cn/models/AlonzoLeeeoooo/LaCon).
 
 <!-- omit in toc -->
